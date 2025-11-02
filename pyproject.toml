@@ -37,6 +37,8 @@ dependencies = [
     "bnnumerizer>=0.0.2",
     "gruut>=2.0.0",
     "transformers>=4.33.0,<4.40.0",
+    "openai-whisper>=20231117",
+    "tqdm>=4.65.0",
 ]
 
 [project.optional-dependencies]

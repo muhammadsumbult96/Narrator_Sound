@@ -8,6 +8,9 @@ from typing import Tuple
 import gradio as gr
 
 from src.voice_cloner import VoiceCloner
+from src.example_generator import ExampleGenerator
+from src.transcript_manager import TranscriptManager
+from src.audio_processor import AudioProcessor
 
 # Configure logging
 logging.basicConfig(
@@ -215,27 +218,210 @@ def create_interface() -> gr.Blocks:
             Returns:
                 Tuple of cleared values
             """
-            return "", None, "Sẵn sàng", ""
+            return "", None, "Ready", ""
 
         clear_btn.click(
             fn=clear_all,
             inputs=[],
             outputs=[text_input, audio_output, status, error_output],
         )
-
-        # Example texts
-        gr.Markdown("### Ví dụ văn bản:")
-        examples = [
-            "Hello, this is a text-to-speech application with voice cloning.",
-            "The darkness holds many secrets, and we are about to uncover them.",
-            "In the depths of the dungeon, heroes face their greatest fears.",
-            "Victory, so close, yet so far away in the face of overwhelming odds.",
-        ]
-
-        example_selector = gr.Examples(
-            examples=examples,
-            inputs=text_input,
-        )
+        
+        # Transcript Management Tab
+        with gr.Tab("📝 Transcript Management"):
+            gr.Markdown(
+                """
+                ### Manage Transcripts for Training Dataset
+                
+                Create transcripts for audio files to prepare a training dataset for fine-tuning.
+                Listen to each audio file and enter its transcript below.
+                """
+            )
+            
+            # Initialize managers (will be re-initialized in functions to get fresh data)
+            def init_managers() -> tuple:
+                """Initialize transcript manager and audio processor."""
+                tm = TranscriptManager()
+                ap = AudioProcessor(sound_dir="Sound")
+                ap.discover_audio_files()
+                return tm, ap, tm.get_statistics()
+            
+            # Initial setup
+            transcript_manager, audio_processor, initial_stats = init_managers()
+            
+            with gr.Row():
+                with gr.Column(scale=1):
+                    stats_display = gr.Markdown(
+                        f"""
+                        **Statistics:**
+                        - Total audio files: {initial_stats['total_audio_files']}
+                        - With transcript: {initial_stats['with_transcript']}
+                        - Without transcript: {initial_stats['without_transcript']}
+                        - Completion: {initial_stats['completion_percentage']:.1f}%
+                        """
+                    )
+                    
+                    refresh_stats_btn = gr.Button("🔄 Refresh Statistics", variant="secondary")
+                    
+                    # Get files without transcript
+                    files_without_transcript_list = transcript_manager.get_audio_files_without_transcript(
+                        audio_processor.audio_files
+                    )
+                    files_without_transcript_state = gr.State(value=files_without_transcript_list)
+                    
+                    if files_without_transcript_list:
+                        current_file_idx = gr.State(value=0)
+                        current_file_path = gr.State(value=str(files_without_transcript_list[0]))
+                        
+                        audio_player = gr.Audio(
+                            label="Current Audio File",
+                            type="filepath",
+                            value=str(files_without_transcript_list[0]),
+                        )
+                        
+                        file_info = gr.Textbox(
+                            label="File Info",
+                            value=f"File 1 of {len(files_without_transcript_list)}: {files_without_transcript_list[0].name}",
+                            interactive=False,
+                        )
+                        
+                        transcript_input = gr.Textbox(
+                            label="Enter Transcript",
+                            placeholder="Type the transcript for this audio file...",
+                            lines=5,
+                        )
+                        
+                        save_status = gr.Textbox(label="Save Status", interactive=False, value="")
+                        
+                        with gr.Row():
+                            save_transcript_btn = gr.Button("💾 Save Transcript", variant="primary")
+                            next_file_btn = gr.Button("➡️ Next File", variant="secondary")
+                            prev_file_btn = gr.Button("⬅️ Previous File", variant="secondary")
+                        
+                        def get_file_list() -> list:
+                            """Get fresh list of files without transcript."""
+                            tm, ap, _ = init_managers()
+                            return tm.get_audio_files_without_transcript(ap.audio_files)
+                        
+                        def load_file_at_idx(idx: int, file_list: list) -> tuple:
+                            """Load file at index from list."""
+                            if 0 <= idx < len(file_list):
+                                file_path = Path(file_list[idx])
+                                tm, _, _ = init_managers()
+                                existing_transcript = tm.get_transcript(file_path) or ""
+                                return (
+                                    str(file_path),
+                                    str(file_path),
+                                    f"File {idx + 1} of {len(file_list)}: {file_path.name}",
+                                    existing_transcript,
+                                )
+                            return "", "", "No file", ""
+                        
+                        def save_and_next(file_path: str, transcript: str, current_idx: int, file_list: list) -> tuple:
+                            """Save transcript and move to next file."""
+                            try:
+                                tm, _, _ = init_managers()
+                                tm.set_transcript(file_path, transcript)
+                                
+                                # Get updated file list
+                                ap = AudioProcessor(sound_dir="Sound")
+                                ap.discover_audio_files()
+                                updated_list = tm.get_audio_files_without_transcript(ap.audio_files)
+                                
+                                # Move to next if available
+                                if current_idx < len(file_list) - 1 and len(updated_list) > 0:
+                                    # File was removed from list, stay at same index or adjust
+                                    new_idx = min(current_idx, len(updated_list) - 1) if updated_list else 0
+                                    if new_idx < len(updated_list):
+                                        return load_file_at_idx(new_idx, updated_list) + (new_idx, updated_list, "✅ Transcript saved! Moving to next file...")
+                                
+                                # Refresh stats
+                                stats = tm.get_statistics()
+                                new_stats = f"""
+                                **Statistics:**
+                                - Total audio files: {stats['total_audio_files']}
+                                - With transcript: {stats['with_transcript']}
+                                - Without transcript: {stats['without_transcript']}
+                                - Completion: {stats['completion_percentage']:.1f}%
+                                """
+                                
+                                if updated_list:
+                                    return load_file_at_idx(0, updated_list) + (0, updated_list, "✅ Transcript saved!", new_stats)
+                                else:
+                                    return "", "", "✅ All files have transcripts!", "", 0, [], "✅ Transcript saved! All files completed!", new_stats
+                            except Exception as e:
+                                return file_path, audio_player.value, file_info.value, transcript_input.value, current_idx, file_list, f"❌ Error: {str(e)}", stats_display.value
+                        
+                        def load_next(idx: int, file_list: list) -> tuple:
+                            """Load next file."""
+                            if idx < len(file_list) - 1:
+                                return load_file_at_idx(idx + 1, file_list) + (idx + 1, file_list)
+                            return load_file_at_idx(idx, file_list) + (idx, file_list)
+                        
+                        def load_prev(idx: int, file_list: list) -> tuple:
+                            """Load previous file."""
+                            if idx > 0:
+                                return load_file_at_idx(idx - 1, file_list) + (idx - 1, file_list)
+                            return load_file_at_idx(idx, file_list) + (idx, file_list)
+                        
+                        save_transcript_btn.click(
+                            fn=save_and_next,
+                            inputs=[current_file_path, transcript_input, current_file_idx, files_without_transcript_state],
+                            outputs=[current_file_path, audio_player, file_info, transcript_input, current_file_idx, files_without_transcript_state, save_status, stats_display],
+                        )
+                        
+                        next_file_btn.click(
+                            fn=load_next,
+                            inputs=[current_file_idx, files_without_transcript_state],
+                            outputs=[current_file_path, audio_player, file_info, transcript_input, current_file_idx, files_without_transcript_state],
+                        )
+                        
+                        prev_file_btn.click(
+                            fn=load_prev,
+                            inputs=[current_file_idx, files_without_transcript_state],
+                            outputs=[current_file_path, audio_player, file_info, transcript_input, current_file_idx, files_without_transcript_state],
+                        )
+                    else:
+                        gr.Markdown("✅ All audio files have transcripts!")
+                
+                with gr.Column(scale=1):
+                    gr.Markdown("### Export Dataset")
+                    gr.Markdown("Export transcripts as CSV format for training.")
+                    
+                    export_btn = gr.Button("📤 Export Training Dataset", variant="primary")
+                    export_status = gr.Textbox(label="Export Status", interactive=False)
+                    
+                    def export_dataset_fn() -> str:
+                        """Export dataset to CSV."""
+                        try:
+                            tm, _, _ = init_managers()
+                            output_path = tm.export_training_dataset()
+                            return f"✅ Dataset exported to: {output_path}"
+                        except Exception as e:
+                            return f"❌ Error: {str(e)}"
+                    
+                    export_btn.click(
+                        fn=export_dataset_fn,
+                        outputs=[export_status],
+                    )
+                    
+                    def refresh_stats_fn() -> tuple:
+                        """Refresh statistics and file list."""
+                        tm, ap, stats = init_managers()
+                        ap.discover_audio_files()
+                        file_list = tm.get_audio_files_without_transcript(ap.audio_files)
+                        stats_text = f"""
+                        **Statistics:**
+                        - Total audio files: {stats['total_audio_files']}
+                        - With transcript: {stats['with_transcript']}
+                        - Without transcript: {stats['without_transcript']}
+                        - Completion: {stats['completion_percentage']:.1f}%
+                        """
+                        return stats_text, file_list
+                    
+                    refresh_stats_btn.click(
+                        fn=refresh_stats_fn,
+                        outputs=[stats_display, files_without_transcript_state],
+                    )
 
     return app
 

@@ -10,6 +10,14 @@ import soundfile as sf
 
 logger = logging.getLogger(__name__)
 
+# Import transcript manager for filtering
+try:
+    from src.transcript_manager import TranscriptManager
+    TRANSCRIPT_MANAGER_AVAILABLE = True
+except ImportError:
+    TRANSCRIPT_MANAGER_AVAILABLE = False
+    logger.warning("TranscriptManager not available")
+
 # Standard audio parameters for TTS
 TARGET_SAMPLE_RATE = 22050
 TARGET_DURATION_MAX = 30.0  # Maximum duration in seconds
@@ -33,8 +41,11 @@ class AudioProcessor:
         self.target_sample_rate = target_sample_rate
         self.audio_files: List[Path] = []
 
-    def discover_audio_files(self) -> List[Path]:
+    def discover_audio_files(self, require_transcript: bool = True) -> List[Path]:
         """Discover all WAV files in the sound directory.
+
+        Args:
+            require_transcript: If True, only return files that have transcripts
 
         Returns:
             List of paths to audio files
@@ -44,8 +55,19 @@ class AudioProcessor:
             return []
 
         audio_files = list(self.sound_dir.glob("*.wav"))
-        self.audio_files = sorted(audio_files)
-        logger.info(f"Discovered {len(self.audio_files)} audio files")
+        audio_files = sorted(audio_files)
+        
+        # Filter by transcript if required
+        if require_transcript and TRANSCRIPT_MANAGER_AVAILABLE:
+            try:
+                transcript_manager = TranscriptManager(sound_dir=self.sound_dir)
+                audio_files = transcript_manager.get_audio_files_with_transcript(audio_files)
+                logger.info(f"Filtered to {len(audio_files)} audio files with transcripts")
+            except Exception as e:
+                logger.warning(f"Error filtering by transcript: {e}. Using all files.")
+        
+        self.audio_files = audio_files
+        logger.info(f"Discovered {len(audio_files)} audio files")
         return self.audio_files
 
     def load_audio(
