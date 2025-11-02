@@ -197,24 +197,24 @@ def create_interface() -> gr.Blocks:
             Returns:
                 Tuple of (audio_path, status, error)
             """
-            status_msg = "Đang xử lý..."
+            status_msg = "Processing..."
             error_msg = ""
 
             try:
                 audio_path, error = synthesize_text(text)
 
                 if audio_path:
-                    status_msg = "Hoàn thành!"
+                    status_msg = "Completed!"
                     return audio_path, status_msg, ""
                 else:
-                    error_msg = error or "Có lỗi xảy ra"
-                    status_msg = "Lỗi"
+                    error_msg = error or "An error occurred"
+                    status_msg = "Error"
                     return None, status_msg, error_msg
 
             except Exception as e:
-                error_msg = f"Lỗi: {str(e)}"
+                error_msg = f"Error: {str(e)}"
                 logger.error(error_msg, exc_info=True)
-                status_msg = "Lỗi"
+                status_msg = "Error"
                 return None, status_msg, error_msg
 
         generate_btn.click(
