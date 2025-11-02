@@ -2,11 +2,27 @@
 
 import logging
 import os
+import sys
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
 import torch
+
+# Workaround for bnnumerizer import issue
+# Try to install bnnumerizer if not available
+try:
+    import bnnumerizer
+except ImportError:
+    logging.warning("bnnumerizer not found, attempting to install...")
+    import subprocess
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "bnnumerizer", "--quiet"])
+        import bnnumerizer
+    except Exception as e:
+        logging.warning(f"Could not install bnnumerizer: {e}")
+        # Continue anyway - may work if Bangla phonemizer is not used
+
 from TTS.api import TTS
 
 logger = logging.getLogger(__name__)

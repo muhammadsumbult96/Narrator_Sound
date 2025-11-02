@@ -39,17 +39,28 @@ source venv/bin/activate
 
 ### 3. Cài đặt dependencies
 
+**Cách 1: Sử dụng script tự động (Khuyến nghị)**
+
+Windows PowerShell:
+```powershell
+.\install_dependencies.ps1
+```
+
+**Cách 2: Cài đặt thủ công**
+
 ```bash
 pip install -e .
+pip install bnnumerizer gruut
 ```
 
-Hoặc cài đặt từng package:
-
-```bash
-pip install TTS gradio librosa soundfile numpy scipy torch torchaudio pydub underthesea
-```
-
-**Lưu ý**: Lần đầu tiên chạy sẽ tự động tải TTS model (~2GB), có thể mất vài phút.
+**Lưu ý quan trọng**: 
+- Package `bnnumerizer` có thể gặp vấn đề cài đặt. Nếu gặp lỗi, tạo file stub:
+  - Tạo file `venv\Lib\site-packages\bnnumerizer.py` với nội dung:
+    ```python
+    def numerize(text):
+        return text
+    ```
+- Lần đầu tiên chạy sẽ tự động tải TTS model (~2GB), có thể mất vài phút.
 
 ## Sử dụng
 
