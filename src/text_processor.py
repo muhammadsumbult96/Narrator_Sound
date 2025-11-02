@@ -1,4 +1,4 @@
-"""Text processing module for Vietnamese text normalization and tokenization."""
+"""Text processing module for English text normalization and tokenization."""
 
 import logging
 import re
@@ -14,25 +14,22 @@ logger = logging.getLogger(__name__)
 
 
 class TextProcessor:
-    """Process and normalize Vietnamese text for TTS."""
+    """Process and normalize English text for TTS."""
 
     def __init__(self) -> None:
         """Initialize text processor."""
-        # Common abbreviations in Vietnamese
+        # Common abbreviations in English
         self.abbreviations = {
-            "Ông": "ông",
-            "Bà": "bà",
-            "Anh": "anh",
-            "Chị": "chị",
-            "Em": "em",
-            "Dr.": "tiến sĩ",
-            "Mr.": "ông",
-            "Mrs.": "bà",
-            "Ms.": "cô",
+            "Dr.": "Doctor",
+            "Mr.": "Mister",
+            "Mrs.": "Missus",
+            "Ms.": "Miss",
+            "Prof.": "Professor",
+            "vs.": "versus",
         }
 
     def normalize_text(self, text: str) -> str:
-        """Normalize Vietnamese text for TTS.
+        """Normalize English text for TTS.
 
         Args:
             text: Input text
@@ -58,7 +55,7 @@ class TextProcessor:
         return text.strip()
 
     def _normalize_diacritics(self, text: str) -> str:
-        """Normalize Vietnamese diacritics if needed.
+        """Normalize text diacritics if needed.
 
         Args:
             text: Input text
@@ -66,8 +63,7 @@ class TextProcessor:
         Returns:
             Text with normalized diacritics
         """
-        # This is a placeholder - Vietnamese text should already have proper diacritics
-        # Can be extended if needed for handling common typos
+        # Placeholder for text normalization
         return text
 
     def _expand_abbreviations(self, text: str) -> str:
@@ -94,17 +90,16 @@ class TextProcessor:
         Returns:
             Cleaned text
         """
-        # Keep Vietnamese characters, numbers, basic punctuation
-        # Vietnamese Unicode range: U+00C0 to U+1EF9
+        # Keep English characters, numbers, basic punctuation
         text = re.sub(
-            r"[^\w\s\u00C0-\u1EF9.,!?;:()\-'\"ÀÁẢÃẠÂẦẤẨẪẬĂẰẮẲẴẶÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴĐàáảãạâầấẩẫậăằắẳẵặèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]",
+            r"[^\w\s.,!?;:()\-'\"\"]",
             "",
             text,
         )
         return text
 
     def tokenize(self, text: str) -> List[str]:
-        """Tokenize Vietnamese text.
+        """Tokenize English text.
 
         Args:
             text: Input text

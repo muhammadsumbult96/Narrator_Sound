@@ -1,10 +1,10 @@
-# Vietnamese TTS Voice Cloning Application
+# Text-to-Speech Voice Cloning Application
 
-Ứng dụng Text-to-Speech tiếng Việt với khả năng voice cloning từ các file âm thanh mẫu. Ứng dụng sử dụng Coqui TTS (XTTS v2) để tạo giọng nói từ văn bản tiếng Việt với giọng tương tự như các file âm thanh mẫu trong thư mục `Sound`.
+Ứng dụng Text-to-Speech tiếng Anh với khả năng voice cloning từ các file âm thanh mẫu. Ứng dụng sử dụng Coqui TTS (XTTS v2) để tạo giọng nói từ văn bản tiếng Anh với giọng tương tự như các file âm thanh mẫu trong thư mục `Sound`.
 
 ## Tính năng
 
-- ✅ Text-to-Speech tiếng Việt với voice cloning
+- ✅ Text-to-Speech tiếng Anh với voice cloning
 - ✅ Giao diện web với Gradio (dễ sử dụng)
 - ✅ Hỗ trợ CPU (không cần GPU)
 - ✅ Xử lý văn bản dài tự động chia nhỏ
@@ -54,6 +54,8 @@ pip install bnnumerizer gruut
 ```
 
 **Lưu ý quan trọng**: 
+- Một số packages (`gruut`, `jieba`) cần được cài từ source để tránh lỗi missing files
+- Script `install_dependencies.ps1` sẽ tự động xử lý điều này
 - Package `bnnumerizer` có thể gặp vấn đề cài đặt. Nếu gặp lỗi, tạo file stub:
   - Tạo file `venv\Lib\site-packages\bnnumerizer.py` với nội dung:
     ```python
@@ -61,6 +63,21 @@ pip install bnnumerizer gruut
         return text
     ```
 - Lần đầu tiên chạy sẽ tự động tải TTS model (~2GB), có thể mất vài phút.
+
+**Xử lý lỗi dependencies:**
+- Nếu gặp lỗi `ModuleNotFoundError` với `gruut` hoặc `jieba`, cài lại từ source:
+  ```powershell
+  .\venv\Scripts\pip.exe install --force-reinstall --no-cache-dir gruut==2.2.3
+  .\venv\Scripts\pip.exe install --force-reinstall --no-cache-dir jieba
+  ```
+- Nếu gặp lỗi `cannot import name 'BeamSearchScorer' from 'transformers'`, downgrade transformers:
+  ```powershell
+  .\venv\Scripts\pip.exe install "transformers>=4.33.0,<4.40.0"
+  ```
+- Nếu gặp lỗi `Weights only load failed` hoặc `weights_only` với PyTorch, downgrade PyTorch:
+  ```powershell
+  .\venv\Scripts\pip.exe install "torch>=2.0.0,<2.6.0" "torchaudio>=2.0.0,<2.6.0"
+  ```
 
 ## Sử dụng
 
@@ -81,9 +98,9 @@ from src.voice_cloner import VoiceCloner
 cloner = VoiceCloner(sound_dir="Sound")
 cloner.initialize()
 
-# Tạo âm thanh từ văn bản
+# Tạo âm thanh từ văn bản tiếng Anh
 audio = cloner.synthesize_simple(
-    text="Xin chào, đây là ứng dụng text-to-speech tiếng Việt.",
+    text="Hello, this is a text-to-speech application with voice cloning.",
     output_path="output.wav"
 )
 ```
@@ -97,7 +114,7 @@ Project_Sound_DD/
 │   ├── __init__.py
 │   ├── audio_processor.py   # Xử lý và chuẩn hóa file âm thanh
 │   ├── tts_engine.py         # TTS engine với Coqui TTS
-│   ├── text_processor.py     # Xử lý văn bản tiếng Việt
+│   ├── text_processor.py     # Xử lý văn bản tiếng Anh
 │   └── voice_cloner.py       # Module voice cloning chính
 ├── tests/                   # Unit tests
 ├── app.py                   # Ứng dụng Gradio
@@ -150,7 +167,8 @@ Dự án phát triển cho Vietnamese TTS với voice cloning.
 
 ## Ghi chú
 
-- Model XTTS v2 hỗ trợ nhiều ngôn ngữ nhưng tối ưu nhất cho tiếng Việt
+- Model XTTS v2 hỗ trợ nhiều ngôn ngữ (tiếng Anh, Tây Ban Nha, Pháp, Đức, v.v.) nhưng không hỗ trợ tiếng Việt
+- Ứng dụng này được thiết kế cho tiếng Anh để tạo giọng narrator từ game
 - Chất lượng giọng nói phụ thuộc vào chất lượng file mẫu trong thư mục `Sound`
 - Lần đầu tiên sử dụng cần thời gian để tải và khởi tạo model
 

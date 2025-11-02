@@ -78,7 +78,7 @@ class VoiceCloner:
         self,
         text: str,
         speaker_sample: Optional[str | Path] = None,
-        language: str = "vi",
+        language: str = "en",
         output_path: Optional[str | Path] = None,
     ) -> np.ndarray:
         """Clone voice and synthesize text.
@@ -127,7 +127,9 @@ class VoiceCloner:
                 # Use temporary file for chunks
                 chunk_output = None
                 if output_path:
-                    chunk_output = Path(tempfile.gettempdir()) / f"chunk_{i}_{output_path.stem}.wav"
+                    # Convert to Path if it's a string
+                    output_path_obj = Path(output_path) if isinstance(output_path, str) else output_path
+                    chunk_output = Path(tempfile.gettempdir()) / f"chunk_{i}_{output_path_obj.stem}.wav"
                     chunk_files_to_cleanup.append(chunk_output)
 
                 audio = self.tts_engine.synthesize(
@@ -146,18 +148,65 @@ class VoiceCloner:
                 except Exception as e:
                     logger.warning(f"Could not cleanup chunk file {chunk_file}: {e}")
 
+        # Ensure all segments have the same sample rate and format
+        sample_rate = 22050  # XTTS standard sample rate
+        
+        # Normalize and concatenate all segments with small pauses
+        normalized_segments = []
+        pause_duration = 0.2  # 0.2 seconds pause between chunks
+        pause_samples = int(sample_rate * pause_duration)
+        pause = np.zeros(pause_samples, dtype=np.float32)
+        
+        for i, audio in enumerate(audio_segments):
+            # Ensure audio is 1D array
+            if audio.ndim > 1:
+                audio = np.mean(audio, axis=0)
+            
+            # Ensure same sample rate (resample if needed)
+            if len(audio) > 0:
+                # Normalize audio to prevent clipping
+                max_val = np.abs(audio).max()
+                if max_val > 0:
+                    audio = audio / max_val * 0.95  # Leave headroom
+                
+                normalized_segments.append(audio)
+                
+                # Add pause between chunks (except after last one)
+                if i < len(audio_segments) - 1:
+                    normalized_segments.append(pause)
+        
         # Concatenate all segments
-        if len(audio_segments) == 1:
-            final_audio = audio_segments[0]
+        if len(normalized_segments) == 1:
+            final_audio = normalized_segments[0]
         else:
-            final_audio = np.concatenate(audio_segments)
+            final_audio = np.concatenate(normalized_segments)
+        
+        # Final normalization to ensure proper range
+        max_val = np.abs(final_audio).max()
+        if max_val > 0:
+            final_audio = final_audio / max_val * 0.95
+        
+        # Ensure proper dtype
+        final_audio = final_audio.astype(np.float32)
 
         # Save final output if path provided
         if output_path:
             import soundfile as sf
-
-            sf.write(str(output_path), final_audio, 22050)  # XTTS uses 22050 Hz
-            logger.info(f"Saved output to {output_path}")
+            
+            # Convert to Path if it's a string
+            output_path_obj = Path(output_path) if isinstance(output_path, str) else output_path
+            
+            # Ensure directory exists
+            output_path_obj.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Save with proper format
+            sf.write(
+                str(output_path_obj),
+                final_audio,
+                sample_rate,
+                subtype='PCM_16'  # Use 16-bit PCM for better compatibility
+            )
+            logger.info(f"Saved output to {output_path_obj} (duration: {len(final_audio)/sample_rate:.2f}s)")
 
         return final_audio
 

@@ -73,7 +73,7 @@ class TTSEngine:
         self,
         text: str,
         speaker_wav: Optional[str | Path] = None,
-        language: str = "vi",
+        language: str = "en",
         output_path: Optional[str | Path] = None,
     ) -> np.ndarray:
         """Synthesize speech from text.
@@ -123,6 +123,18 @@ class TTSEngine:
             import soundfile as sf
 
             audio, sample_rate = sf.read(str(output_path))
+            
+            # Ensure audio is 1D array (mono)
+            if audio.ndim > 1:
+                audio = np.mean(audio, axis=0)
+            
+            # Ensure proper dtype
+            audio = audio.astype(np.float32)
+            
+            # Normalize to prevent clipping
+            max_val = np.abs(audio).max()
+            if max_val > 0:
+                audio = audio / max_val * 0.95  # Leave headroom
 
             # Clean up temp file if it was auto-created
             if output_path.name == "temp_output.wav" and output_path.exists():
@@ -153,8 +165,8 @@ class TTSEngine:
             return []
 
         try:
-            # XTTS v2 supports multiple languages
-            return ["vi", "en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh-cn", "ja", "hu", "ko"]
+            # XTTS v2 supports multiple languages (Vietnamese not supported)
+            return ["en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh-cn", "ja", "hu", "ko", "hi"]
         except Exception:
-            return ["vi", "en"]  # Default fallback
+            return ["en"]  # Default fallback
 

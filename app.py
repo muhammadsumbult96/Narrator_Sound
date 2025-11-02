@@ -68,8 +68,17 @@ def synthesize_text(text: str) -> Tuple[str | None, str | None]:
             text=text.strip(),
             output_path=output_path,
         )
+        
+        # Verify the file was created and has content
+        import os
+        if not os.path.exists(output_path):
+            return None, "Lỗi: File âm thanh không được tạo"
+        
+        file_size = os.path.getsize(output_path)
+        if file_size < 1000:  # Less than 1KB is suspicious
+            return None, f"Lỗi: File âm thanh quá nhỏ ({file_size} bytes)"
 
-        logger.info(f"Successfully generated audio: {output_path}")
+        logger.info(f"Successfully generated audio: {output_path} (size: {file_size} bytes)")
         return output_path, None
 
     except Exception as e:
@@ -84,13 +93,13 @@ def create_interface() -> gr.Blocks:
     Returns:
         Gradio Blocks interface
     """
-    with gr.Blocks(title="Vietnamese TTS Voice Cloning", theme=gr.themes.Soft()) as app:
+    with gr.Blocks(title="Text-to-Speech Voice Cloning", theme=gr.themes.Soft()) as app:
         gr.Markdown(
             """
-            # 🎙️ Vietnamese Text-to-Speech với Voice Cloning
+            # 🎙️ Text-to-Speech với Voice Cloning
 
-            Ứng dụng TTS tiếng Việt với khả năng voice cloning từ các file âm thanh mẫu.
-            Nhập văn bản tiếng Việt và nhấn nút để tạo âm thanh.
+            Ứng dụng TTS tiếng Anh với khả năng voice cloning từ các file âm thanh mẫu.
+            Nhập văn bản tiếng Anh và nhấn nút để tạo âm thanh với giọng narrator từ game.
 
             **Lưu ý**: Lần đầu tiên sử dụng có thể mất thời gian để tải model.
             """
@@ -99,10 +108,10 @@ def create_interface() -> gr.Blocks:
         with gr.Row():
             with gr.Column(scale=2):
                 text_input = gr.Textbox(
-                    label="Nhập văn bản tiếng Việt",
-                    placeholder="Ví dụ: Xin chào, đây là ứng dụng text-to-speech tiếng Việt.",
+                    label="Nhập văn bản tiếng Anh",
+                    placeholder="Ví dụ: Hello, this is a text-to-speech application with voice cloning.",
                     lines=5,
-                    value="Xin chào, đây là ứng dụng text-to-speech tiếng Việt với voice cloning.",
+                    value="Hello, this is a text-to-speech application with voice cloning from game audio samples.",
                 )
 
                 with gr.Row():
@@ -180,10 +189,10 @@ def create_interface() -> gr.Blocks:
         # Example texts
         gr.Markdown("### Ví dụ văn bản:")
         examples = [
-            "Xin chào, đây là ứng dụng text-to-speech tiếng Việt.",
-            "Hôm nay trời rất đẹp, chúng ta đi dạo phố nhé.",
-            "Công nghệ trí tuệ nhân tạo đang phát triển rất nhanh.",
-            "Tiếng Việt là ngôn ngữ rất phong phú với nhiều dấu thanh.",
+            "Hello, this is a text-to-speech application with voice cloning.",
+            "The darkness holds many secrets, and we are about to uncover them.",
+            "In the depths of the dungeon, heroes face their greatest fears.",
+            "Victory, so close, yet so far away in the face of overwhelming odds.",
         ]
 
         example_selector = gr.Examples(
@@ -196,13 +205,31 @@ def create_interface() -> gr.Blocks:
 
 def main() -> None:
     """Main entry point."""
-    logger.info("Starting Vietnamese TTS Voice Cloning application")
+    import socket
+    
+    def find_free_port(start_port: int = 7860) -> int:
+        """Find a free port starting from start_port."""
+        for port in range(start_port, start_port + 10):
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.bind(("0.0.0.0", port))
+                    return port
+            except OSError:
+                continue
+        raise RuntimeError(f"Could not find free port in range {start_port}-{start_port + 9}")
+    
+    logger.info("Starting Text-to-Speech Voice Cloning application")
+
+    # Find free port
+    port = find_free_port(7860)
+    if port != 7860:
+        logger.info(f"Port 7860 is in use, using port {port} instead")
 
     # Create and launch interface
     app = create_interface()
     app.launch(
         server_name="0.0.0.0",
-        server_port=7860,
+        server_port=port,
         share=False,
     )
 
