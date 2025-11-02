@@ -13,7 +13,8 @@ Write-Host "Installing core dependencies..." -ForegroundColor Yellow
 
 # Ensure critical packages are installed
 Write-Host "Installing critical dependencies..." -ForegroundColor Yellow
-& .\venv\Scripts\pip.exe install bnnumerizer gruut
+& .\venv\Scripts\pip.exe install --force-reinstall --no-cache-dir gruut==2.2.3
+& .\venv\Scripts\pip.exe install bnnumerizer jieba
 
 # Create bnnumerizer stub if needed
 $bnnumerizerStub = @"
