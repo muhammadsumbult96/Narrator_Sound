@@ -1,4 +1,4 @@
-"""Main Gradio application for Vietnamese TTS with voice cloning."""
+"""Main Gradio application for Text-to-Speech with voice cloning."""
 
 import logging
 import tempfile
@@ -94,47 +94,84 @@ def create_interface() -> gr.Blocks:
         Gradio Blocks interface
     """
     with gr.Blocks(title="Text-to-Speech Voice Cloning", theme=gr.themes.Soft()) as app:
-        gr.Markdown(
-            """
-            # 🎙️ Text-to-Speech với Voice Cloning
-
-            Ứng dụng TTS tiếng Anh với khả năng voice cloning từ các file âm thanh mẫu.
-            Nhập văn bản tiếng Anh và nhấn nút để tạo âm thanh với giọng narrator từ game.
-
-            **Lưu ý**: Lần đầu tiên sử dụng có thể mất thời gian để tải model.
-            """
-        )
-
         with gr.Row():
-            with gr.Column(scale=2):
-                text_input = gr.Textbox(
-                    label="Nhập văn bản tiếng Anh",
-                    placeholder="Ví dụ: Hello, this is a text-to-speech application with voice cloning.",
-                    lines=5,
-                    value="Hello, this is a text-to-speech application with voice cloning from game audio samples.",
+            # Left column: Overview (1/3 screen)
+            with gr.Column(scale=1):
+                gr.Markdown(
+                    """
+                    # 🎙️ Text-to-Speech with Voice Cloning
+
+                    TTS application with voice cloning capabilities from game audio samples.
+                    Uses XTTS v2 to generate deep, narrator-style voice from Darkest Dungeon audio samples.
+
+                    **Note**: First-time use may take time to download models (~2GB).
+                    """
                 )
+            
+            # Right column: Examples (2/3 screen)
+            with gr.Column(scale=2):
+                # Generate and shuffle examples
+                example_gen = ExampleGenerator()
+                examples = example_gen.get_examples(count=100, shuffle=True)
+
+                gr.Markdown("### 📝 Example Texts")
+                gr.Markdown("*Click any example below to use it. Examples are shuffled on each app start.*")
+                
+                # Create hidden text_input for examples binding
+                temp_text_for_examples = gr.Textbox(visible=False)
+                
+                example_selector = gr.Examples(
+                    examples=examples,
+                    inputs=[temp_text_for_examples],
+                    label="",
+                    examples_per_page=10,  # More examples since we have more space
+                )
+        
+        # Define the actual visible text_input for the main form
+        text_input = gr.Textbox(
+            label="Enter Text",
+            placeholder="Enter your text here...",
+            lines=5,
+            value="Remind yourself that overconfidence is a slow and insidious killer.",
+        )
+        
+        # Sync temp_text_for_examples with text_input when examples are clicked
+        # This allows examples to populate the visible text_input
+        def sync_text_input(example_text):
+            return example_text
+        
+        temp_text_for_examples.change(
+            fn=sync_text_input,
+            inputs=[temp_text_for_examples],
+            outputs=[text_input],
+        )
+        
+        with gr.Row():
+            # Left column: Main content
+            with gr.Column(scale=2):
 
                 with gr.Row():
-                    generate_btn = gr.Button("Tạo âm thanh", variant="primary")
-                    clear_btn = gr.Button("Xóa")
+                    generate_btn = gr.Button("Generate Audio", variant="primary")
+                    clear_btn = gr.Button("Clear")
 
-            with gr.Column(scale=1):
                 status = gr.Textbox(
-                    label="Trạng thái",
+                    label="Status",
                     interactive=False,
-                    value="Sẵn sàng",
+                    value="Ready",
                 )
 
-        audio_output = gr.Audio(
-            label="Âm thanh đã tạo",
-            type="filepath",
-        )
+            # Right column: Audio output (1/3 screen)
+            with gr.Column(scale=1):
+                audio_output = gr.Audio(
+                    label="Generated Audio",
+                    type="filepath",
+                )
 
-        error_output = gr.Textbox(
-            label="Thông báo lỗi",
-            interactive=False,
-            visible=True,
-        )
+                error_output = gr.Textbox(
+                    label="Error Messages",
+                    interactive=False,
+                    visible=True,
+                )
 
         # Event handlers
         def generate_audio(text: str) -> Tuple[str, str, str]:

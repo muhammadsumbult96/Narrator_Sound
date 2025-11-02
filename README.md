@@ -1,14 +1,17 @@
-# Text-to-Speech Voice Cloning Application
+# Darkest Dungeon Text-to-Speech Voice Cloning
 
-Ứng dụng Text-to-Speech tiếng Anh với khả năng voice cloning từ các file âm thanh mẫu. Ứng dụng sử dụng Coqui TTS (XTTS v2) để tạo giọng nói từ văn bản tiếng Anh với giọng tương tự như các file âm thanh mẫu trong thư mục `Sound`.
+TTS application with voice cloning capabilities from Darkest Dungeon game audio samples. Uses Coqui TTS (XTTS v2) to generate deep, narrator-style voice that matches the game's atmosphere.
 
-## Tính năng
+## Features
 
-- ✅ Text-to-Speech tiếng Anh với voice cloning
-- ✅ Giao diện web với Gradio (dễ sử dụng)
-- ✅ Hỗ trợ CPU (không cần GPU)
-- ✅ Xử lý văn bản dài tự động chia nhỏ
-- ✅ Chọn tự động các file âm thanh mẫu tốt nhất
+- ✅ **Voice Cloning** from Darkest Dungeon audio samples
+- ✅ **Deep Voice Processing** - Automatically deepens voice with pitch shifting and formant adjustment
+- ✅ Web interface with Gradio (easy to use)
+- ✅ CPU support (no GPU required)
+- ✅ Automatic text splitting for long texts
+- ✅ Automatic selection of best voice samples
+- ✅ 100+ Darkest Dungeon-themed example texts shuffled on each app start
+- ✅ Beautiful English UI focused on Darkest Dungeon atmosphere
 
 ## Yêu cầu hệ thống
 
