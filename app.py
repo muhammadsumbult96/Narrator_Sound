@@ -30,11 +30,22 @@ def get_voice_cloner() -> VoiceCloner:
         VoiceCloner instance
     """
     global _voice_cloner
+    
     if _voice_cloner is None:
         logger.info("Initializing voice cloner...")
         _voice_cloner = VoiceCloner(sound_dir="Sound")
         try:
-            _voice_cloner.initialize()
+            _voice_cloner.initialize(require_transcript=True)
+        except ValueError as e:
+            if "No audio files with transcripts" in str(e):
+                logger.error(str(e))
+                raise RuntimeError(
+                    "No audio files with transcripts found!\n\n"
+                    "Please run the transcription script first:\n"
+                    "  python scripts/transcribe_audio.py\n\n"
+                    "This will automatically transcribe all audio files using Whisper."
+                ) from e
+            raise
         except Exception as e:
             logger.error(f"Error initializing voice cloner: {e}")
             raise

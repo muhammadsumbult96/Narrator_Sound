@@ -37,12 +37,26 @@ class VoiceCloner:
         # Cache for selected voice samples
         self._voice_samples: Optional[List[Path]] = None
 
-    def initialize(self) -> None:
-        """Initialize the voice cloner (discover audio files, select samples)."""
+    def initialize(self, require_transcript: bool = True) -> None:
+        """Initialize the voice cloner (discover audio files, select samples).
+        
+        Args:
+            require_transcript: If True, only use audio files that have transcripts
+        """
         logger.info("Initializing voice cloner...")
-        self.audio_processor.discover_audio_files()
+        self.audio_processor.discover_audio_files(require_transcript=require_transcript)
+        
+        if not self.audio_processor.audio_files:
+            if require_transcript:
+                raise ValueError(
+                    "No audio files with transcripts found! "
+                    "Run scripts/transcribe_audio.py first to transcribe audio files."
+                )
+            else:
+                raise ValueError("No audio files found!")
+        
         self._select_voice_samples()
-        logger.info("Voice cloner initialized")
+        logger.info(f"Voice cloner initialized with {len(self.audio_processor.audio_files)} audio files")
 
     def _select_voice_samples(self, num_samples: int = 5) -> None:
         """Select best voice samples for cloning.
