@@ -49,7 +49,7 @@ Windows PowerShell:
 .\install_dependencies.ps1
 ```
 
-**Cách 2: Cài đặt thủ công**
+**Method 2: Manual installation**
 
 ```bash
 pip install -e .
