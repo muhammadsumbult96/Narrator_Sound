@@ -82,31 +82,40 @@ pip install bnnumerizer gruut
   .\venv\Scripts\pip.exe install "torch>=2.0.0,<2.6.0" "torchaudio>=2.0.0,<2.6.0"
   ```
 
-## Sử dụng
+## Usage
 
-### Chạy ứng dụng web
+### Run the web application
 
-```bash
+```powershell
 python app.py
 ```
 
-Sau đó mở trình duyệt và truy cập: `http://localhost:7860`
+Then open your browser and navigate to: `http://localhost:7860`
 
-### Sử dụng trong code Python
+### Use in Python code
+
+**English TTS (with voice cloning):**
 
 ```python
 from src.voice_cloner import VoiceCloner
 
-# Khởi tạo voice cloner
+# Initialize voice cloner
 cloner = VoiceCloner(sound_dir="Sound")
 cloner.initialize()
 
-# Tạo âm thanh từ văn bản tiếng Anh
+# Generate audio from English text
 audio = cloner.synthesize_simple(
     text="Hello, this is a text-to-speech application with voice cloning.",
     output_path="output.wav"
 )
 ```
+
+### Deep Voice Processing
+
+The application automatically applies deep voice processing to make the narrator voice deeper and more atmospheric:
+- **Pitch Shifting**: Lowers pitch by 4 semitones for a deeper sound
+- **Formant Shifting**: Adjusts vocal tract characteristics for a deeper timbre
+- Uses librosa for high-quality audio processing
 
 ## Cấu trúc project
 
@@ -168,10 +177,24 @@ MIT License
 
 Dự án phát triển cho Vietnamese TTS với voice cloning.
 
-## Ghi chú
+## Notes
 
-- Model XTTS v2 hỗ trợ nhiều ngôn ngữ (tiếng Anh, Tây Ban Nha, Pháp, Đức, v.v.) nhưng không hỗ trợ tiếng Việt
-- Ứng dụng này được thiết kế cho tiếng Anh để tạo giọng narrator từ game
-- Chất lượng giọng nói phụ thuộc vào chất lượng file mẫu trong thư mục `Sound`
-- Lần đầu tiên sử dụng cần thời gian để tải và khởi tạo model
+- **Voice Cloning**: Uses XTTS v2 model with voice cloning from Darkest Dungeon audio samples in the `Sound` directory.
+- **Deep Voice Processing**: Automatically applies pitch shifting (-4 semitones) and formant adjustment to create a deep, narrator-style voice.
+- Voice quality depends on the quality of sample files in the `Sound` directory.
+- First-time use requires time to download and initialize the XTTS v2 model (~2GB).
+- Examples are shuffled on each app start for variety.
+- All examples are themed around Darkest Dungeon for an immersive experience.
+
+## Audio Processing
+
+The deep voice processing includes:
+- **Pitch Shifting**: Lowers pitch using librosa's pitch_shift function
+- **Formant Shifting**: Adjusts frequency spectrum for deeper vocal characteristics
+- Automatic normalization to prevent clipping
+- Maintains audio quality and naturalness
+
+Adjust parameters in `src/voice_cloner.py` to customize the depth of voice:
+- `pitch_shift_semitones`: How much to lower pitch (default: -4.0)
+- `formant_shift`: Formant adjustment factor (default: 0.88)
 

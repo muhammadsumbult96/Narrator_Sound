@@ -8,6 +8,7 @@ from typing import List, Optional
 import numpy as np
 
 from src.audio_processor import AudioProcessor
+from src.audio_deepener import deepen_voice
 from src.text_processor import TextProcessor
 from src.tts_engine import TTSEngine
 
@@ -202,6 +203,16 @@ class VoiceCloner:
         
         # Ensure proper dtype
         final_audio = final_audio.astype(np.float32)
+        
+        # Apply subtle deep voice processing (very light pitch shift)
+        # Uses -1.2 semitones for subtle depth while preserving natural voice
+        logger.info("Applying subtle deep voice processing...")
+        final_audio = deepen_voice(
+            audio=final_audio,
+            sample_rate=sample_rate,
+            pitch_shift_semitones=-1.2,  # Very subtle pitch shift
+            enabled=True,
+        )
 
         # Save final output if path provided
         if output_path:

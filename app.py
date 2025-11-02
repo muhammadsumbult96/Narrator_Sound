@@ -56,13 +56,13 @@ def synthesize_text(text: str) -> Tuple[str | None, str | None]:
     """Synthesize text to speech.
 
     Args:
-        text: Input Vietnamese text
+        text: Input text
 
     Returns:
         Tuple of (audio_file_path, error_message)
     """
     if not text or not text.strip():
-        return None, "Vui lòng nhập văn bản"
+        return None, "Please enter some text"
 
     try:
         logger.info(f"Synthesizing text: {text[:50]}...")
@@ -77,7 +77,7 @@ def synthesize_text(text: str) -> Tuple[str | None, str | None]:
         ) as tmp_file:
             output_path = tmp_file.name
 
-        # Synthesize
+        # Synthesize with voice cloning
         audio_array = voice_cloner.synthesize_simple(
             text=text.strip(),
             output_path=output_path,
@@ -86,17 +86,17 @@ def synthesize_text(text: str) -> Tuple[str | None, str | None]:
         # Verify the file was created and has content
         import os
         if not os.path.exists(output_path):
-            return None, "Lỗi: File âm thanh không được tạo"
+            return None, "Error: Audio file was not created"
         
         file_size = os.path.getsize(output_path)
         if file_size < 1000:  # Less than 1KB is suspicious
-            return None, f"Lỗi: File âm thanh quá nhỏ ({file_size} bytes)"
+            return None, f"Error: Audio file is too small ({file_size} bytes)"
 
         logger.info(f"Successfully generated audio: {output_path} (size: {file_size} bytes)")
         return output_path, None
 
     except Exception as e:
-        error_msg = f"Lỗi khi tạo âm thanh: {str(e)}"
+        error_msg = f"Error generating audio: {str(e)}"
         logger.error(error_msg, exc_info=True)
         return None, error_msg
 
